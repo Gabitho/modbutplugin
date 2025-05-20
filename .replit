@@ -1,0 +1,9 @@
+modules = ["java-graalvm22.3"]
+run = "git add gradlew gradlew.bat gradle/wrapper git commit -m \"Ajout du Gradle Wrapper 8.3\" git push origin main"
+
+[nix]
+channel = "stable-24_05"
+packages = ["gradle"]
+
+[deployment]
+run = ["sh", "-c", "git add gradlew gradlew.bat gradle/wrapper git commit -m \"Ajout du Gradle Wrapper 8.3\" git push origin main"]
