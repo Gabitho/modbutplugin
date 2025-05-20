@@ -1,2 +1,5 @@
-- name: Donner les permissions à Gradle
-  run: chmod +x ./gradlew
+#!/usr/bin/env sh
+# Gradle start up script for UN*X
+
+DIRNAME=$(dirname "$0")
+exec "$DIRNAME"/gradle/wrapper/gradle-wrapper.jar "$@"
