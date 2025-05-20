@@ -1,0 +1,33 @@
+name: Build Plugin
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout le dépôt
+      uses: actions/checkout@v3
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: 17
+
+    - name: Donne les permissions à Gradle
+      run: chmod +x ./gradlew
+
+    - name: Build le plugin
+      run: ./gradlew build
+
+    - name: Upload l'artefact .jar
+      uses: actions/upload-artifact@v4
+      with:
+        name: CustomHeadsPlugin
+        path: build/libs/*.jar
