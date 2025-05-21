@@ -29,3 +29,6 @@ jobs:
         with:
           name: plugin-jar
           path: build/libs/*.jar
+      - name: List build artifacts
+        run: ls -R build/libs
+
