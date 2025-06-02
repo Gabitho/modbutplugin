@@ -2,7 +2,7 @@ plugins {
     java
 }
 
-group = "com.monserveur"
+group = "com.gplugins"
 version = "1.0"
 
 java {
