@@ -1,8 +1,8 @@
-name: gplugins
+name: GPlugins
 version: 1.0
 main: com.gplugins.Main
 api-version: 1.20
 commands:
-  givehead:
-    description: Donne une tête customisée
-    usage: /<command> <custom_model_data>
+  ggive:
+    description: Donne un bloc custom
+    usage: /ggive <nom>
