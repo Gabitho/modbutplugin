@@ -1,61 +1,56 @@
-package tonpackage.plugin.listeners;
+package ton.gplugins; // ← Remplace ça par le vrai package si besoin
 
-import org.bukkit.Material;
+import org.bukkit.*;
+import org.bukkit.block.Block;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.Bukkit;
-import org.bukkit.block.BlockFace;
-import org.bukkit.util.Vector;
 
-public class UraniumPlaceListener implements Listener {
+public class UraniumListener implements Listener {
 
     @EventHandler
     public void onRightClick(PlayerInteractEvent event) {
-        // On ignore les clics sans bloc ciblé
-        if (!event.hasBlock()) return;
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
         Player player = event.getPlayer();
 
-        // Main utilisée (main ou offhand)
-        EquipmentSlot hand = event.getHand();
-        if (hand == null) return;
-
-        ItemStack item = (hand == EquipmentSlot.HAND)
+        // Supporte les deux mains comme un bloc
+        ItemStack item = event.getHand() == EquipmentSlot.HAND
             ? player.getInventory().getItemInMainHand()
             : player.getInventory().getItemInOffHand();
 
-        if (item.getType() != Material.STICK) return;
+        if (item == null || item.getType() != Material.STICK) return;
         if (!item.hasItemMeta()) return;
 
         ItemMeta meta = item.getItemMeta();
         if (!meta.hasCustomModelData()) return;
 
-        // CustomModelData 1001 = bâton uranium
-        if (meta.getCustomModelData() != 1001) return;
+        if (meta.getCustomModelData() != 1001) return; // modèle uranium
 
-        event.setCancelled(true); // empêche les actions par défaut
+        Block clickedBlock = event.getClickedBlock();
+        if (clickedBlock == null) return;
 
-        // Coordonnées du bloc ciblé
-        Vector base = event.getClickedBlock().getLocation().toVector();
-        BlockFace face = event.getBlockFace();
-        Vector target = base.add(new Vector(face.getModX(), face.getModY(), face.getModZ()));
+        Location loc = clickedBlock.getLocation().add(0, 1, 0);
 
-        // Arrondi des coordonnées pour coller à un bloc (entiers)
-        int x = target.getBlockX();
-        int y = target.getBlockY();
-        int z = target.getBlockZ();
+        int x = loc.getBlockX();
+        int y = loc.getBlockY();
+        int z = loc.getBlockZ();
 
-        // Summon l’item_display retexturisé
-        String command = String.format(
-            "summon item_display %d %d %d {item:{id:\"stick\",count:1,components:{custom_model_data:{strings:[\"1001\"]}}}}",
-            x, y, z
+        // 1. Placer diamond_ore (on le retexturera via ressource pack comme uranium)
+        loc.getWorld().getBlockAt(x, y, z).setType(Material.DIAMOND_ORE);
+
+        // 2. Summon item_display par-dessus avec la bonne échelle
+        String summonCommand = String.format(
+            "summon item_display %d %d %d {item:{id:\"stick\",count:1,components:{custom_model_data:{strings:[\"1001\"]}}},transformation:{scale:[1.01f,1.01f,1.01f]}}",
+            x, y + 1, z
         );
 
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), summonCommand);
     }
 }

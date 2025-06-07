@@ -2,6 +2,8 @@ package com.gplugins;
 
 import org.bukkit.plugin.java.JavaPlugin;
 import com.gplugins.commands.GGiveCommand;
+import com.gplugins.UraniumListener;
+
 
 public class Main extends JavaPlugin {
 
@@ -17,3 +19,4 @@ public class Main extends JavaPlugin {
         getLogger().info("GPlugins arrêté.");
     }
 }
+
