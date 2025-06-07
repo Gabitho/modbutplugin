@@ -1,4 +1,5 @@
-package com.gplugins;
+package com.gplugins.listeners;
+
 
 import org.bukkit.plugin.java.JavaPlugin;
 import com.gplugins.commands.GGiveCommand;
