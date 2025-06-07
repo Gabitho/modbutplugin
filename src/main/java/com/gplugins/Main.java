@@ -1,4 +1,4 @@
-package com.gplugins.listeners;
+package com.gplugins;
 
 
 import org.bukkit.plugin.java.JavaPlugin;

@@ -1,4 +1,4 @@
-package ton.gplugins; // ← Remplace ça par le vrai package si besoin
+package com.gplugins.listeners; // ← Remplace ça par le vrai package si besoin
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
