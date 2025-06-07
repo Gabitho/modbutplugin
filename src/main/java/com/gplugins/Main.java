@@ -2,7 +2,7 @@ package com.gplugins;
 
 import org.bukkit.plugin.java.JavaPlugin;
 import com.gplugins.commands.GGiveCommand;
-import com.gplugins.UraniumListener;
+import com.gplugins.UraniumPlaceListener;
 
 
 public class Main extends JavaPlugin {
