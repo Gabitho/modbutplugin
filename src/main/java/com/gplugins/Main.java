@@ -9,6 +9,7 @@ public class Main extends JavaPlugin {
     public void onEnable() {
         getLogger().info("GPlugins démarré !");
         getCommand("ggive").setExecutor(new GGiveCommand());
+        getServer().getPluginManager().registerEvents(new UraniumPlaceListener(), this);
     }
 
     @Override
