@@ -30,8 +30,12 @@ public class GGiveCommand implements CommandExecutor, TabCompleter {
         ItemStack uraniumStick = new ItemStack(Material.STICK);
         ItemMeta meta = uraniumStick.getItemMeta();
         if (meta != null) {
-            meta.setCustomModelData("1001"); // À associer dans le resource pack
+            CustomModelDataComponent customModelData = meta.getCustomModelDataComponent();
             meta.setDisplayName("§aMinerai d'uranium");
+
+            customModelData.setStrings(Arrays.asList("1001"));
+            meta.setCustomModelDataComponent(customModelData);
+
             uraniumStick.setItemMeta(meta);
         }
 
