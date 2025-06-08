@@ -31,7 +31,7 @@ public class UraniumPlaceListener implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (!meta.hasCustomModelData()) return;
 
-        if (meta.getCustomModelData() != "1001") return; // modèle uranium
+        if ((String)(meta.getCustomModelData()) != "1001") return; // modèle uranium
 
         Block clickedBlock = event.getClickedBlock();
         if (clickedBlock == null) return;
@@ -48,7 +48,7 @@ public class UraniumPlaceListener implements Listener {
         // 2. Summon item_display par-dessus avec la bonne échelle
         String summonCommand = String.format(
             "summon item_display %d %d %d {item:{id:\"stick\",count:1,components:{custom_model_data:{strings:[\"1001\"]}}},{transformation:{scale:[1.02f,1.02f,1.02f]}}",
-            x-0.51, y + 1, z-0.51
+            x-0.51, y, z-0.51
         );
 
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), summonCommand);
