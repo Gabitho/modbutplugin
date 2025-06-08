@@ -31,7 +31,7 @@ public class UraniumPlaceListener implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (!meta.hasCustomModelData()) return;
 
-        if ((String)(meta.getCustomModelData()) != "1001") return; // modèle uranium
+        if (Integer.toString(meta.getCustomModelData()) != "1001") return; // modèle uranium
 
         Block clickedBlock = event.getClickedBlock();
         if (clickedBlock == null) return;
