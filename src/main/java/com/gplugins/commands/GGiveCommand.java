@@ -8,8 +8,20 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.CustomModelDataComponent;
-import java.util.Arrays;
+
+import java.util.Collections;
+import java.util.List;
+
+package com.gplugins.commands;
+
+import org.bukkit.Material;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,20 +40,14 @@ public class GGiveCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // Création de l'item custom (bâton uranium)
-        ItemStack uraniumStick = new ItemStack(Material.STICK);
-        ItemMeta meta = uraniumStick.getItemMeta();
-        if (meta != null) {
-            CustomModelDataComponent customModelData = meta.getCustomModelDataComponent();
-            meta.setDisplayName("§aMinerai d'uranium");
-
-            customModelData.setStrings(Arrays.asList("1001"));
-            meta.setCustomModelDataComponent(customModelData);
-
-            uraniumStick.setItemMeta(meta);
-        }
-
-        player.getInventory().addItem(uraniumStick);
+        // Exécuter la commande vanilla avec custom_model_data en string
+        String command = String.format(
+            "give %s minecraft:stick[custom_name='{\"text\":\"§aMinerai d'uranium\"}',custom_model_data={strings:[\"1001\"]}] 1",
+            player.getName()
+        );
+        
+        // Exécuter la commande via le serveur
+        org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), command);
         player.sendMessage("§aTu as reçu un bâton d'uranium !");
         return true;
     }
