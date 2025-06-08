@@ -47,8 +47,8 @@ public class UraniumPlaceListener implements Listener {
 
         // 2. Summon item_display par-dessus avec la bonne échelle
         String summonCommand = String.format(
-            "summon item_display %d %d %d {item:{id:\"stick\",count:1,components:{custom_model_data:{strings:[\"1001\"]}}},transformation:{scale:[1.01f,1.01f,1.01f]}}",
-            x, y + 1, z
+            "summon item_display %d %d %d {item:{id:\"stick\",count:1,components:{custom_model_data:{strings:[\"1001\"]}}},{transformation:{scale:[1.02f,1.02f,1.02f]}}",
+            x-0.51, y + 1, z-0.51
         );
 
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), summonCommand);
