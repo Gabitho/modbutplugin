@@ -87,7 +87,7 @@ public class GGiveCommand implements CommandExecutor, TabCompleter {
         
         boolean success = org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), giveItemCommand);
         
-    
+        return success;
     }
 
     @Override
