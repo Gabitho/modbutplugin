@@ -26,10 +26,14 @@ public class GGiveCommand implements CommandExecutor, TabCompleter {
         }
 
         // Exécuter la commande vanilla avec custom_model_data en string
-        command = String.format(
-            "give %s minecraft:stick[custom_name='{\"text\":\"§aMinerai d'uranium\"}',custom_model_data={strings:[\"1001\"]}] 1",
+        
+        String uraniumCommand = String.format(
+            "give %s minecraft:stick[custom_name='{\"text\":\"Minerai d uranium\"}',custom_model_data={strings:[\"1001\"]}] 1",
             player.getName()
         );
+        
+        // Exécuter la commande via le serveur
+        org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), uraniumCommand);
         
         // Exécuter la commande via le serveur
         org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), command);
