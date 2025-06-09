@@ -72,22 +72,25 @@ public class GGiveCommand implements CommandExecutor, TabCompleter {
         }
 
         // Créer l'item avec la commande vanilla
+    // Option 1 : Format JSON Component pour custom_name
+    String giveItemCommand = String.format(
+        "give %s minecraft:%s[custom_name='{\"text\":\"%s\",\"italic\":false}',custom_model_data={strings:[\"%s\"]}] 1",
+        player.getName(),
+        customItem.getMaterial().name().toLowerCase(),
+        customItem.getDisplayName().replace("§", "\\u00a7"),
+        customItem.getCustomModelData()
+    );
     
-        String giveItemCommand = String.format(
-            "give %s minecraft:%s[custom_name='{\"text\":\"%s\"}',custom_model_data={strings:[\"%s\"]}]] 1",
-            player.getName(),
-            customItem.getMaterial().name().toLowerCase(),
-            customItem.getDisplayName().replace("§", "\\u00a7"),
-            customItem.getCustomModelData()
-        );
-
-        
-        org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), giveItemCommand);
-
-
-        player.sendMessage("§aTu as reçu: " + customItem.getDisplayName());
-        return true;
-
+    // Debug : voir la commande générée
+    System.out.println("Commande générée: " + giveItemCommand);
+    player.sendMessage("§7Debug: " + giveItemCommand);
+    
+    boolean success = org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), giveItemCommand);
+    
+    if (!success) {
+        throw new Exception("Commande échouée");
+    }
+    
     }
 
     @Override
