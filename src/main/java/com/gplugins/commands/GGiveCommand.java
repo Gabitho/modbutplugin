@@ -74,12 +74,13 @@ public class GGiveCommand implements CommandExecutor, TabCompleter {
         // Créer l'item avec la commande vanilla
     
         String giveItemCommand = String.format(
-            "give %s minecraft:%s[custom_name='{\"text\":\"%s\"}',custom_model_data={strings:[\"%s\"]}] 1",
+            "give %s minecraft:%s[custom_name='{\"text\":\"%s\"}',custom_model_data={strings:[\"%s\"]}]] 1",
             player.getName(),
             customItem.getMaterial().name().toLowerCase(),
             customItem.getDisplayName().replace("§", "\\u00a7"),
             customItem.getCustomModelData()
         );
+
         
         org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), giveItemCommand);
 
