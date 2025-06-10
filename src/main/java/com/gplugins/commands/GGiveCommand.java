@@ -74,7 +74,7 @@ public class GGiveCommand implements CommandExecutor, TabCompleter {
         // Créer l'item avec la commande vanilla
         // Option 1 : Format JSON Component pour custom_name
         String giveItemCommand = String.format(
-            "give %s minecraft:%s[custom_name='{\"text\":\"%s\",\"italic\":false}',custom_model_data={strings:[\"%s\"]}] 1",
+            "give %s minecraft:%s[custom_name={\"text\":\"%s\",\"italic\":false},custom_model_data={strings:[\"%s\"]}] 1",
             player.getName(),
             customItem.getMaterial().name().toLowerCase(),
             customItem.getDisplayName().replace("§", "\\u00a7"),
