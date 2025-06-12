@@ -82,8 +82,6 @@ public class GGiveCommand implements CommandExecutor, TabCompleter {
         );
         
         // Debug : voir la commande générée
-        System.out.println("Commande générée: " + giveItemCommand);
-        player.sendMessage("§7Debug: " + giveItemCommand);
         
         boolean success = org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), giveItemCommand);
         
