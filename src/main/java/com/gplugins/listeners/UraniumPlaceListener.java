@@ -2,7 +2,6 @@ package com.gplugins.listeners;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,6 +13,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,10 +32,12 @@ public class UraniumPlaceListener implements Listener {
     // Classe pour stocker les infos en attente
     private static class PendingPlacement {
         Location location;
+        EquipmentSlot hand;
         long timestamp;
         
-        PendingPlacement(Location location) {
+        PendingPlacement(Location location, EquipmentSlot hand) {
             this.location = location;
+            this.hand = hand;
             this.timestamp = System.currentTimeMillis();
         }
     }
@@ -61,131 +65,66 @@ public class UraniumPlaceListener implements Listener {
         Location placementLoc = clickedBlock.getLocation().add(0, 1, 0);
         
         // Stocker l'emplacement de placement en attente
-        pendingPlacements.put(player.getUniqueId(), new PendingPlacement(placementLoc));
+        pendingPlacements.put(player.getUniqueId(), new PendingPlacement(placementLoc, event.getHand()));
         
-        // Créer une commande /data pour récupérer les custom_model_data
-        String slot = event.getHand() == EquipmentSlot.HAND ? "mainhand" : "offhand";
-        String dataCommand = String.format("data get entity %s SelectedItem.components.minecraft:custom_model_data", player.getName());
-        
-        // Exécuter la commande et traiter le résultat
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                // Exécuter la commande data
-                Bukkit.dispatchCommand(new DataCommandSender(player), dataCommand);
-            }
-        }.runTask(plugin);
+        // Utiliser une approche avec fichier temporaire pour récupérer les données
+        executeDataCommand(player);
         
         event.setCancelled(true);
     }
     
-    // CommandSender personnalisé pour capturer le résultat de /data
-    private class DataCommandSender implements CommandSender {
-        private final Player originalPlayer;
+    private void executeDataCommand(Player player) {
+        // Créer un fichier temporaire unique
+        String fileName = "data_" + player.getUniqueId().toString().replace("-", "") + "_" + System.currentTimeMillis() + ".txt";
+        File dataFile = new File(plugin.getDataFolder(), fileName);
         
-        public DataCommandSender(Player player) {
-            this.originalPlayer = player;
+        // Créer le dossier si nécessaire
+        if (!plugin.getDataFolder().exists()) {
+            plugin.getDataFolder().mkdirs();
         }
         
-        @Override
-        public void sendMessage(String message) {
-            // Traiter le résultat de la commande /data
-            processDataResult(originalPlayer, message);
-        }
+        // Commande pour écrire le résultat dans un fichier
+        String dataCommand = String.format(
+            "execute as %s run data get entity @s SelectedItem.components.minecraft:custom_model_data > %s",
+            player.getName(),
+            dataFile.getAbsolutePath()
+        );
         
-        @Override
-        public void sendMessage(String[] messages) {
-            for (String message : messages) {
-                sendMessage(message);
+        // Exécuter la commande
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), dataCommand);
+        
+        // Lire le fichier après un court délai
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    if (dataFile.exists()) {
+                        String content = Files.readString(dataFile.toPath());
+                        processDataResult(player, content);
+                        dataFile.delete(); // Nettoyer
+                    } else {
+                        // Fallback : utiliser le CustomModelData standard
+                        processDataFallback(player);
+                    }
+                } catch (IOException e) {
+                    plugin.getLogger().warning("Erreur lors de la lecture du fichier data: " + e.getMessage());
+                    processDataFallback(player);
+                }
             }
-        }
-        
-        @Override
-        public Server getServer() {
-            return Bukkit.getServer();
-        }
-        
-        @Override
-        public String getName() {
-            return "DataCommandSender";
-        }
-        
-        @Override
-        public Spigot spigot() {
-            return originalPlayer.spigot();
-        }
-        
-        @Override
-        public boolean isPermissionSet(String name) {
-            return true;
-        }
-        
-        @Override
-        public boolean isPermissionSet(org.bukkit.permissions.Permission perm) {
-            return true;
-        }
-        
-        @Override
-        public boolean hasPermission(String name) {
-            return true;
-        }
-        
-        @Override
-        public boolean hasPermission(org.bukkit.permissions.Permission perm) {
-            return true;
-        }
-        
-        @Override
-        public org.bukkit.permissions.PermissionAttachment addAttachment(org.bukkit.plugin.Plugin plugin, String name, boolean value) {
-            return null;
-        }
-        
-        @Override
-        public org.bukkit.permissions.PermissionAttachment addAttachment(org.bukkit.plugin.Plugin plugin) {
-            return null;
-        }
-        
-        @Override
-        public org.bukkit.permissions.PermissionAttachment addAttachment(org.bukkit.plugin.Plugin plugin, String name, boolean value, int ticks) {
-            return null;
-        }
-        
-        @Override
-        public org.bukkit.permissions.PermissionAttachment addAttachment(org.bukkit.plugin.Plugin plugin, int ticks) {
-            return null;
-        }
-        
-        @Override
-        public void removeAttachment(org.bukkit.permissions.PermissionAttachment attachment) {}
-        
-        @Override
-        public void recalculatePermissions() {}
-        
-        @Override
-        public java.util.Set<org.bukkit.permissions.PermissionAttachmentInfo> getEffectivePermissions() {
-            return new java.util.HashSet<>();
-        }
-        
-        @Override
-        public boolean isOp() {
-            return true;
-        }
-        
-        @Override
-        public void setOp(boolean value) {}
+        }.runTaskLater(plugin, 5L); // Attendre 5 ticks (0.25 secondes)
     }
     
     private void processDataResult(Player player, String dataResult) {
         PendingPlacement pending = pendingPlacements.get(player.getUniqueId());
         if (pending == null) return;
         
-        // Vérifier si la réponse est trop ancienne (>2 secondes)
-        if (System.currentTimeMillis() - pending.timestamp > 2000) {
+        // Vérifier si la réponse est trop ancienne (>5 secondes)
+        if (System.currentTimeMillis() - pending.timestamp > 5000) {
             pendingPlacements.remove(player.getUniqueId());
             return;
         }
         
-        // Parser le résultat de /data
+        // Parser le résultat
         String customModelData = parseCustomModelData(dataResult);
         
         if (customModelData != null && isValidUraniumData(customModelData)) {
@@ -193,44 +132,64 @@ public class UraniumPlaceListener implements Listener {
             placeUraniumBlock(pending.location, customModelData);
             
             // Retirer l'item de l'inventaire
-            removeItemFromPlayer(player);
+            removeItemFromPlayer(player, pending.hand);
             
             player.sendMessage("§aBloc d'uranium placé !");
+        } else {
+            player.sendMessage("§cCet item ne peut pas être placé !");
         }
         
         // Nettoyer
         pendingPlacements.remove(player.getUniqueId());
     }
     
-    private String parseCustomModelData(String dataResult) {
-        // Parser les différents formats possibles :
-        // Format 1: "SelectedItem.components.minecraft:custom_model_data: {strings: [\"uranium\"]}"
-        // Format 2: "SelectedItem.components.minecraft:custom_model_data: 1001"
-        // Format 3: "No data available"
+    private void processDataFallback(Player player) {
+        PendingPlacement pending = pendingPlacements.get(player.getUniqueId());
+        if (pending == null) return;
         
+        // Utiliser l'ancienne méthode avec getCustomModelData()
+        ItemStack item = pending.hand == EquipmentSlot.HAND
+            ? player.getInventory().getItemInMainHand()
+            : player.getInventory().getItemInOffHand();
+            
+        if (item != null && item.hasItemMeta()) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta.hasCustomModelData()) {
+                String customModelData = String.valueOf(meta.getCustomModelData());
+                
+                if (isValidUraniumData(customModelData)) {
+                    placeUraniumBlock(pending.location, customModelData);
+                    removeItemFromPlayer(player, pending.hand);
+                    player.sendMessage("§aBloc d'uranium placé !");
+                } else {
+                    player.sendMessage("§cCet item ne peut pas être placé !");
+                }
+            }
+        }
+        
+        pendingPlacements.remove(player.getUniqueId());
+    }
+    
+    private String parseCustomModelData(String dataResult) {
+        if (dataResult == null || dataResult.trim().isEmpty()) return null;
         if (dataResult.contains("No data available") || dataResult.contains("has no item")) {
             return null;
         }
         
         // Chercher le format avec strings
-        if (dataResult.contains("strings:")) {
-            int startIndex = dataResult.indexOf("[\"") + 2;
-            int endIndex = dataResult.indexOf("\"]", startIndex);
-            if (startIndex > 1 && endIndex > startIndex) {
+        if (dataResult.contains("\"")) {
+            int startIndex = dataResult.indexOf("\"") + 1;
+            int endIndex = dataResult.indexOf("\"", startIndex);
+            if (startIndex > 0 && endIndex > startIndex) {
                 return dataResult.substring(startIndex, endIndex);
             }
         }
         
-        // Chercher le format numérique
-        if (dataResult.contains("custom_model_data:")) {
-            String[] parts = dataResult.split("custom_model_data:");
-            if (parts.length > 1) {
-                String numberPart = parts[1].trim();
-                // Extraire le nombre
-                numberPart = numberPart.replaceAll("[^0-9]", "");
-                if (!numberPart.isEmpty()) {
-                    return numberPart;
-                }
+        // Chercher les nombres
+        String[] parts = dataResult.split("\\s+");
+        for (String part : parts) {
+            if (part.matches("\\d+")) {
+                return part;
             }
         }
         
@@ -238,8 +197,12 @@ public class UraniumPlaceListener implements Listener {
     }
     
     private boolean isValidUraniumData(String customModelData) {
-        // Vérifier si c'est de l'uranium
-        return || "1001".equals(customModelData);
+        // Ajouter tous vos minerais ici
+        return "uranium".equals(customModelData) || 
+               "1001".equals(customModelData) ||
+               "plutonium".equals(customModelData) ||
+               "thorium".equals(customModelData) ||
+               "2001".equals(customModelData);
     }
     
     private void placeUraniumBlock(Location location, String customModelData) {
@@ -260,21 +223,20 @@ public class UraniumPlaceListener implements Listener {
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), summonCommand);
     }
     
-    private void removeItemFromPlayer(Player player) {
-        ItemStack mainHand = player.getInventory().getItemInMainHand();
-        ItemStack offHand = player.getInventory().getItemInOffHand();
-        
-        if (mainHand != null && mainHand.getType() == Material.STICK && mainHand.hasItemMeta()) {
-            if (mainHand.getAmount() > 1) {
-                mainHand.setAmount(mainHand.getAmount() - 1);
+    private void removeItemFromPlayer(Player player, EquipmentSlot hand) {
+        ItemStack item = hand == EquipmentSlot.HAND
+            ? player.getInventory().getItemInMainHand()
+            : player.getInventory().getItemInOffHand();
+            
+        if (item != null && item.getType() == Material.STICK) {
+            if (item.getAmount() > 1) {
+                item.setAmount(item.getAmount() - 1);
             } else {
-                player.getInventory().setItemInMainHand(null);
-            }
-        } else if (offHand != null && offHand.getType() == Material.STICK && offHand.hasItemMeta()) {
-            if (offHand.getAmount() > 1) {
-                offHand.setAmount(offHand.getAmount() - 1);
-            } else {
-                player.getInventory().setItemInOffHand(null);
+                if (hand == EquipmentSlot.HAND) {
+                    player.getInventory().setItemInMainHand(null);
+                } else {
+                    player.getInventory().setItemInOffHand(null);
+                }
             }
         }
     }
