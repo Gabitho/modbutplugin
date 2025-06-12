@@ -239,7 +239,7 @@ public class UraniumPlaceListener implements Listener {
     
     private boolean isValidUraniumData(String customModelData) {
         // Vérifier si c'est de l'uranium
-        return "uranium".equals(customModelData) || "1001".equals(customModelData);
+        return || "1001".equals(customModelData);
     }
     
     private void placeUraniumBlock(Location location, String customModelData) {
