@@ -1,107 +1,102 @@
 package com.gplugins.commands;
 
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import net.md_5.bungee.api.ChatColor;
+
+import com.gplugins.managers.CustomItemManager;
 
 import java.util.*;
 
 public class GGiveCommand implements CommandExecutor, TabCompleter {
     
-    // Classe pour définir un item custom
-    private static class CustomItem {
-        private final String name;
-        private final String displayName;
-        private final Material material;
-        private final String customModelData;
-        private final int fallbackModelData;
-        
-        public CustomItem(String name, String displayName, Material material, String customModelData, int fallbackModelData) {
-            this.name = name;
-            this.displayName = displayName;
-            this.material = material;
-            this.customModelData = customModelData;
-            this.fallbackModelData = fallbackModelData;
-        }
-        
-        // Getters
-        public String getName() { return name; }
-        public String getDisplayName() { return displayName; }
-        public Material getMaterial() { return material; }
-        public String getCustomModelData() { return customModelData; }
-        public int getFallbackModelData() { return fallbackModelData; }
-    }
+    private final CustomItemManager customItemManager;
     
-    // Map contenant tous les items custom
-    private static final Map<String, CustomItem> CUSTOM_ITEMS = new HashMap<>();
-    
-    static {
-        // Ajouter tous vos items custom ici
-        CUSTOM_ITEMS.put("uranium", new CustomItem(
-            "uranium", 
-            "§aMinerai d'uranium", 
-            Material.STICK, 
-            "1001", 
-            1001
-        ));
+    public GGiveCommand(CustomItemManager customItemManager) {
+        this.customItemManager = customItemManager;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("Commande réservée aux joueurs.");
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Cette commande est réservée aux joueurs.");
             return true;
         }
-
-        if (args.length != 1) {
-            player.sendMessage("§cUsage: /ggive <item>");
-        }
         
-        String itemName = args[0].toLowerCase();
-        CustomItem customItem = CUSTOM_ITEMS.get(itemName);
+        Player player = (Player) sender;
         
-        if (customItem == null) {
-            player.sendMessage("§cItem introuvable: " + itemName);
-            player.sendMessage("§7Items disponibles: " + String.join(", ", CUSTOM_ITEMS.keySet()));
+        if (args.length < 1) {
+            player.sendMessage(ChatColor.RED + "Usage: /ggive <item> [quantité]");
+            player.sendMessage(ChatColor.GRAY + "Items disponibles: " + 
+                String.join(", ", customItemManager.getRegisteredItemIds()));
             return true;
         }
-
-        // Créer l'item avec la commande vanilla
-        // Option 1 : Format JSON Component pour custom_name
-        String giveItemCommand = String.format(
-            "give %s minecraft:%s[custom_name={\"text\":\"%s\",\"italic\":false},custom_model_data={strings:[\"%s\"]}] 1",
-            player.getName(),
-            customItem.getMaterial().name().toLowerCase(),
-            customItem.getDisplayName().replace("§", "\\u00a7"),
-            customItem.getCustomModelData()
-        );
         
-        // Debug : voir la commande générée
+        String itemId = args[0].toLowerCase();
+        int quantity = 1;
         
-        boolean success = org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), giveItemCommand);
+        // Vérifier la quantité si spécifiée
+        if (args.length >= 2) {
+            try {
+                quantity = Integer.parseInt(args[1]);
+                if (quantity <= 0 || quantity > 64) {
+                    player.sendMessage(ChatColor.RED + "La quantité doit être entre 1 et 64.");
+                    return true;
+                }
+            } catch (NumberFormatException e) {
+                player.sendMessage(ChatColor.RED + "Quantité invalide: " + args[1]);
+                return true;
+            }
+        }
         
-        return success;
+        // Créer l'item custom
+        ItemStack item = customItemManager.createCustomItem(itemId);
+        if (item == null) {
+            player.sendMessage(ChatColor.RED + "Item introuvable: " + itemId);
+            player.sendMessage(ChatColor.GRAY + "Items disponibles: " + 
+                String.join(", ", customItemManager.getRegisteredItemIds()));
+            return true;
+        }
+        
+        // Définir la quantité
+        item.setAmount(quantity);
+        
+        // Donner l'item au joueur
+        if (player.getInventory().firstEmpty() == -1) {
+            player.sendMessage(ChatColor.YELLOW + "Inventaire plein! L'item a été jeté au sol.");
+            player.getWorld().dropItemNaturally(player.getLocation(), item);
+        } else {
+            player.getInventory().addItem(item);
+        }
+        
+        CustomItemManager.CustomItemData itemData = customItemManager.getCustomItemData(itemId);
+        player.sendMessage(ChatColor.GREEN + "Vous avez reçu " + quantity + "x " + itemData.getDisplayName());
+        
+        return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> completions = new ArrayList<>();
+        
         if (args.length == 1) {
-            List<String> completions = new ArrayList<>();
+            // Auto-complétion pour les noms d'items
             String input = args[0].toLowerCase();
             
-            for (String itemName : CUSTOM_ITEMS.keySet()) {
-                if (itemName.startsWith(input)) {
-                    completions.add(itemName);
+            for (String itemId : customItemManager.getRegisteredItemIds()) {
+                if (itemId.startsWith(input)) {
+                    completions.add(itemId);
                 }
             }
-            
-            return completions;
+        } else if (args.length == 2) {
+            // Auto-complétion pour les quantités
+            completions.addAll(Arrays.asList("1", "16", "32", "64"));
         }
-        return Collections.emptyList();
+        
+        return completions;
     }
 }
